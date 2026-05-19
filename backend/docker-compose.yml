@@ -1,0 +1,32 @@
+version '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment: 
+      POSTGRES_USER: fitness_user
+      POSTGRES_PASSWORD: 2673
+      POSTGRES_DB: fitness_db
+    ports:
+      - "5432:5432"
+    volumes:
+      # This ensures my database isn't wiped when the container stops
+      - "postgres_data:/var/lib/postgresql/data"
+
+  # The FastAPI Backend
+  api:
+    build: ./backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      # The API conects to the DB using the service name 'db' as the host
+      DATABSE_URL: postgresql://fitness_user:2673@db:5432/fitness_db
+      SECRET_KEY: 7b3897ee1e2e84cf65765c4270c2a287ce9f42aa3c7df0bb24dd6980574cee5a
+    depends_on:
+      - db
+
+  # Defines the name of the volume for data permissions
+  volumes:
+    postgres_data:
