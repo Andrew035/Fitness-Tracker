@@ -1,4 +1,8 @@
-CREATE TYPE workout_focus AS ENUM (
+-- Enable the UUID extension first!
+create extension if not exists "uuid-ossp";
+
+-- Enforce Data Integrity
+create type workout_focus as enum (
     'upper_body',
     'lower_body',
     'full_body',
@@ -6,49 +10,52 @@ CREATE TYPE workout_focus AS ENUM (
     'mixed'
 );
 
-CREATE TABLE profiles (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    username VARCHAR(50) UNIQUE NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- User Profiles
+create table profiles (
+    id uuid primary key default uuid_generate_v4(),
+    username varchar(50) unique not null,
+    email varchar(255) unique not null,
+    password_hash varchar(255) not null,
+    created_at timestamp with time zone default now()
 );
 
-CREATE TABLE sessions (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    profile_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
-    focus workout_focus NOT NULL,
-    start_time TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    end_time TIMESTAMP WITH TIME ZONE,
-    notes TEXT
+-- Core Sessions
+create table sessions (
+    id uuid primary key default uuid_generate_v4(),
+    profile_id uuid references profiles(id) on delete cascade,
+    focus workout_focus not null,
+    start_time timestamp with time zone default now(),
+    end_time timestamp with time zone,
+    notes text
 );
 
-CREATE TABLE exercises (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name VARCHAR(100) NOT NULL,
-    is_cardio BOOLEAN DEFAULT FALSE
+-- Exercises
+create table exercises (
+    id uuid primary key default uuid_generate_v4(),
+    name varchar(100) not null,
+    is_cardio boolean default false
 );
 
--- The Flexible Logging Table
-CREATE TABLE exercise_logs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    session_id UUID REFERENCES sessions(id) ON DELETE CASCADE,
-    exercise_id UUID REFERENCES exercises(id),
+-- The Logs
+create table exercise_logs (
+    id uuid primary key default uuid_generate_v4(),
+    session_id uuid references sessions(id) on delete cascade,
+    exercise_id uuid references exercises(id),
 
-    -- Fields for Strength
-    set_number INT,
-    weight_lbs DECIMAL(5,2),
-    reps INT
+    -- Strength
+    set_number int,
+    weight_lbs decimal(5,2),
+    reps int,
 
-    -- Fields for Cardio
-    distance_miles DECIMAL(5,2),
-    duration_seconds INT,
+    -- Cardio
+    distance_miles decimal(5,2),
+    duration_seconds int,
 
-    create_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at timestamp with time zone default now(),
 
-    -- Ensure at least one type of tracking is provided
-    CONSTRAINT valid_log CHECK (
-        (weight_lbs IS NOT NULL AND reps IS NOT NULL) OR
-        (distance_miles IS NOT NULL OR duration_seconds IS NOT NULL)
+    -- Ensure valid data
+    constraint valid_log check (
+        (weight_lbs is not null and reps is not null) or
+        (distance_miles is not null or duration_seconds is not null)
     )
 );

@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment: 
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      # This ensures my database isn't wiped when the container stops
+      - "postgres_data:/var/lib/postgresql/data"
+      # Copy schema to the initialization folder
+      - ./backend/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+
+  # The FastAPI Backend
+  api:
+    build: ./backend
+    restart: always
+    ports:
+      - "8000:8000"
+    volumes:
+      # Syncs local backend folder to the container in real-time
+      - ./backend:/app
+    # Tells server to restart whenever a file is saved
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      # The API conects to the DB using the service name 'db' as the host
+      DATABASE_URL: ${DATABASE_URL}
+      SECRET_KEY: ${SECRET_KEY}
+    depends_on:
+      - db
+
+# Defines the name of the volume for data permissions
+volumes:
+  postgres_data:

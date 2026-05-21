@@ -1,0 +1,36 @@
+# Backend (Python / FastAPI)
+# Virtual Environments
+backend/venv/
+venv/
+env/
+
+# Compiled Python Files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Fronend (React / Vite)
+# Node dependencies
+frontend/node_modules
+node_modules
+
+# Production build output
+frontend/dist/
+frontend/dist-ssr/
+dist/
+
+# Environment & Secrets
+.env
+.env.*
+*.local
+
+# OS & Editor Files
+# Mac system files
+.DS_Store
+Thumbs.db
+
+# Editor directories
+.vscode/
+.idea/
+*.swp
+*.swo
