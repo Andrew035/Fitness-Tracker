@@ -1,13 +1,17 @@
-from auth import get_password_hash
-
-# Import local files
-from database import get_db
 from fastapi import Depends, FastAPI, HTTPException, status
-from models import Profile
-from schemas import UserCreate, UserResponse
 from sqlalchemy.orm import Session
 
+# Import local files
+from auth import get_password_hash
+from database import get_db
+from models import Profile
+from schemas import UserCreate, UserResponse
+
 app = FastAPI()
+
+
+def health_check():
+    return {"status": "ok", "message": "The kitchen is open!"}
 
 
 @app.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
