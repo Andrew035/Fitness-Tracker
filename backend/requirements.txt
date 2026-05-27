@@ -3,5 +3,6 @@ uvicorn[standard]
 sqlalchemy
 psycopg2-binary
 passlib[bcrypt]
+bcrypt==3.2.2
 PyJWT
 python-multipart
