@@ -6,6 +6,7 @@ import enum
 import uuid
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     Column,
     DateTime,
@@ -70,9 +71,9 @@ class Exercise(Base):
     __tablename__ = "exercises"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-
     # e.g., "Bench Press", "Squat", or "Neighborhood 5K"
     name = Column(String, nullable=False)
+    is_cardio = Column(Boolean, default=False)
 
     logs = relationship("ExerciseLog", back_populates="exercise")
 

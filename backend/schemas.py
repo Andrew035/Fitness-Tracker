@@ -53,9 +53,15 @@ class ExerciseLogCreate(BaseModel):
     duration_seconds: Optional[float] = None
 
 
-class ExerciseLogResponse(ExerciseLogCreate):
+class ExerciseLogResponse(BaseModel):
     id: uuid.UUID
     exercise_id: uuid.UUID
+
+    set_number: Optional[int] = None
+    reps: Optional[int] = None
+    weight_lbs: Optional[float] = None
+    distance_miles: Optional[float] = None
+    duration_seconds: Optional[float] = None
 
     class Config:
         from_attributes = True
@@ -63,7 +69,7 @@ class ExerciseLogResponse(ExerciseLogCreate):
 
 # Workout Schemas
 class SessionCreate(BaseModel):
-    focus: str
+    focus: WorkoutFocus
     notes: Optional[str] = None
     # A workout can receive a list of exercises all at once
     logs: List[ExerciseLogCreate] = []
@@ -74,7 +80,7 @@ class SessionResponse(BaseModel):
     profile_id: uuid.UUID
     focus: WorkoutFocus
     start_time: datetime
-    end_time: Optional[str] = None
+    end_time: Optional[datetime] = None
     notes: Optional[str] = None
     logs: List[ExerciseLogResponse] = []
 

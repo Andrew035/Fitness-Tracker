@@ -122,7 +122,7 @@ def get_user_profile(current_user: Profile = Depends(get_current_user)):
 
 # Workout Routes
 @app.post(
-    "/workouts", response_model=SessionResponse, status_code=status.HTTP_201_CREATED
+    "/sessions", response_model=SessionResponse, status_code=status.HTTP_201_CREATED
 )
 def log_workout(
     session_data: SessionCreate,
@@ -131,7 +131,7 @@ def log_workout(
 ):
     # Create the main Workout record
     new_session = WorkoutSession(
-        id=current_user.id,
+        profile_id=current_user.id,
         focus=session_data.focus,
         notes=session_data.notes,
     )
