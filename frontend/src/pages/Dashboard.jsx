@@ -14,8 +14,26 @@ const Dashboard = () => {
     ]);
     const [statusMsg, setStatusMsg] = useState({ test: '', type: '' });
 
+    // History State
+    const [history, setHistory] = useState([]);
+    const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+
+    // Fetching Data
+    const fetchHistory = async (token) => {
+        try {
+            const response = await axios.get('http://localhost:8000/sessions', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setHistory(response.data);
+        } catch (error) {
+            console.error('Failed to fetch history:', error);
+        } finally {
+            setIsLoadingHistory(false);
+        }
+    }
+
     useEffect(() => {
-        const fetchProfile = async () => {
+        const fetchProfileAndData = async () => {
             const token = localStorage.getItem('token');
             if (!token) {
                 navigate('/login');
@@ -26,12 +44,16 @@ const Dashboard = () => {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setProfile(response.data);
+
+                // Fetch history immediately after confirming the user
+                await fetchHistory(token);
+
             } catch (error) {
                 localStorage.removeItem('token');
                 navigate('/login');
             }
         };
-        fetchProfile();
+        fetchProfileAndData();
     }, [navigate]);
 
 
@@ -88,11 +110,24 @@ const Dashboard = () => {
             setNotes('');
             setLogs([{ name: '', set_number: 1, reps: '', weight_lbs: '', distance_miles: '', duration_seconds: '' }])
 
+            // Instantly refresh the histroy feed!
+            fetchHistory(token);
+
             setTimeout(() => setStatusMsg({ text: '', type: '' }), 3000);
         } catch (error) {
             console.error("Save error:", error);
             setStatusMsg({ text: 'Failed to save workout. Check console.', type: 'error' });
         }
+    };
+
+    // Helper Formatters
+    const formatFocus = (focusStr) => {
+        return focusStr.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    };
+
+    const formatDate = (dateString) => {
+        const options = { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
+        return new Date(dateString).toLocaleDateString('en-US', options);
     };
 
     if (!profile) {
@@ -124,7 +159,7 @@ const Dashboard = () => {
                             >
                                 <option value="upper_body">Upper Body</option>
                                 <option value="lower_body">Lower Body</option>
-                                <option value="cardio">cardio</option>
+                                <option value="cardio">Cardio</option>
                                 <option value="full_body">Full Body</option>
                             </select>
                         </div>
@@ -163,11 +198,15 @@ const Dashboard = () => {
                                     </div>
 
                                     <div className="col-span-4 md:col-span-2">
-                                        <input type="number" placeholder="" value={log.weight_lbs} onChange={(e) => updateLog(index, 'weight_lbs', e.target.value)} className='w-full bg-transparent border border-gray-700 rounded p-2 text-textMain text-sm focus:border-primary focus:outline-none' />
+                                        <input type="number" placeholder="Weight (lbs)" value={log.weight_lbs} onChange={(e) => updateLog(index, 'weight_lbs', e.target.value)} className='w-full bg-transparent border border-gray-700 rounded p-2 text-textMain text-sm focus:border-primary focus:outline-none' />
                                     </div>
 
                                     <div className="col-span-6 md:col-span-2">
                                         <input type="number" step="0.1" placeholder="Miles" value={log.distance_miles} onChange={(e) => updateLog(index, 'distance_miles', e.target.value)} className='w-full bg-transparent border border-gray-700 rounded p-2 text-textMain text-sm focus:border-primary focus:outline-none' />
+                                    </div>
+
+                                    <div className="col-span-6 md:col-span-2">
+                                        <input type="number" step="0.1" placeholder="Duration (seconds)" value={log.duration_seconds} onChange={(e) => updateLog(index, 'duration_seconds', e.target.value)} className='w-full bg-transparent border border-gray-700 rounded p-2 text-textMain text-sm focus:border-primary focus:outline-none' />
                                     </div>
 
                                     <div className="col-span-4 md:col-span-1">
@@ -194,6 +233,64 @@ const Dashboard = () => {
                         </button>
                     </div>
                 </form>
+            </div>
+
+            {/* History Feed */}
+            <div>
+                <h2 className='text-2xl font-semibold text-textMain mb-6 border-b border-gray-800 pb-4'>Recent Sessions</h2>
+
+                {isLoadingHistory ? (
+                    <div className='text-textMuted'>Loading history...</div>
+                ) : history.length === 0 ? (
+                    <div className='text-textMuted bg-surface p-8 rounded-xl border border-gray-800 text-center'>No workouts logged yet. Time to get after it!</div>
+                ) : (
+                    <div className='space-y-6'>
+                        {history.map((session) => (
+                            <div key={session.id} className='bg-surface border border-gray-800 rounded-xl p-6'>
+                                {/* Session Header */}
+                                <div className="flex justify-between items-start mb-4">
+                                    <div>
+                                        <span className="inline-block px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-full text-xs font-bold uppercase tracking-wider mb-2">
+                                            {formatFocus(session.focus)}
+                                        </span>
+                                        <h3 className="text-sm text-textMuted">{formatDate(session.start_time)}</h3>
+                                    </div>
+                                    {session.notes && (
+                                        <div className="bg-[#181825] border border-gray-800/50 px-4 py-2 rounded-lg text-sm text-textMain max-w-xs italic">
+                                            "{session.notes}"
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Session Logs Table */}
+                                {session.logs && session.logs.length > 0 && (
+                                    <div className="mt-4 overflow-hidden rounded-lg border border-gray-800/50">
+                                        <table className="w-full text-left text-sm text-textMain">
+                                            <thead className="bg-[#181825] text-textMuted text-xs uppercase font-medium">
+                                                <tr>
+                                                    <th className="px-4 py-3">Set</th>
+                                                    <th className="px-4 py-3">Reps</th>
+                                                    <th className="px-4 py-3">Weight (lbs)</th>
+                                                    <th className="px-4 py-3">Distance (mi)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-800/50 bg-surface">
+                                                {session.logs.map((log) => (
+                                                    <tr key={log.id} className="hover:bg-[#181825]/50 transition-colors">
+                                                        <td className="px-4 py-3 text-textMuted">{log.set_number || '-'}</td>
+                                                        <td className="px-4 py-3">{log.reps || '-'}</td>
+                                                        <td className="px-4 py-3">{log.weight_lbs || '-'}</td>
+                                                        <td className="px-4 py-3">{log.distance_miles || '-'}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     )

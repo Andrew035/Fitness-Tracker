@@ -1,3 +1,5 @@
+from typing import List
+
 import jwt
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -178,3 +180,20 @@ def log_workout(
         )  # Refresh the workout so it grabs the attached exercises
 
     return new_session
+
+
+@app.get("/sessions", response_model=List[SessionResponse])
+def get_sessions(
+    db: Session = Depends(get_db),
+    current_user: Profile = Depends(get_current_user),
+):
+    # Query the database for the user's specific sessions
+    # Ording them in descending order so the newest workout is at the top
+    sessions = (
+        db.query(WorkoutSession)
+        .filter(WorkoutSession.profile_id == current_user.id)
+        .order_by(WorkoutSession.start_time.desc())
+        .all()
+    )
+
+    return sessions
